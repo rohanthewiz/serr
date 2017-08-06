@@ -30,8 +30,8 @@ func TestSErr(t *testing.T) {
 	if !ok {
 		t.Error("Wrap should return an error containing a concrete SErr type")
 	} else {
-		// Test SErr#GetWrappedErr
-		strErr := se.GetWrappedErr().Error()
+		// Test SErr#OriginalErr
+		strErr := se.OriginalErr().Error()
 		if strErr != strErr1 {
 			t.Errorf(`Expected wrapped error string to be "%s", got "%s"`, strErr1, strErr)
 		}

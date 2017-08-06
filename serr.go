@@ -59,7 +59,7 @@ func Wrap(err error, fields ...string) error {
 }
 
 // Return the wrapped error
-func (se SErr) GetWrappedErr() error {
+func (se SErr) OriginalErr() error {
 	return se.err
 }
 
