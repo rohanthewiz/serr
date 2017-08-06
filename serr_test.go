@@ -24,7 +24,7 @@ func TestSErr(t *testing.T) {
 		t.FailNow()
 	}
 
-	// Add some fields to an existing customErr
+	// Add some fields to an existing sErr
 	err := Wrap(ser, "thing2", "thing2NewVal")
 	se, ok := err.(SErr)
 	if !ok {
@@ -39,12 +39,12 @@ func TestSErr(t *testing.T) {
 		strFlds := se.FieldsSlice()
 		fmt.Println("[Debug] strFlds:", strFlds)  // debug
 		if len(strFlds) != 6 {
-			t.Error("Expected length of customErr.Fields() to be 6, got", len(strFlds))
+			t.Error("Expected length of SErr.Fields() to be 6, got", len(strFlds))
 		}
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
 		if len(mapFlds) != 2 {
-			t.Error("Expected length of customErr.MapFlds() to be 2, got", len(mapFlds))
+			t.Error("Expected length of SErr.MapFlds() to be 2, got", len(mapFlds))
 			t.FailNow()
 		}
 
