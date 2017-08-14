@@ -11,6 +11,13 @@ func TestSErr(t *testing.T) {
 	// todo: constantize most test literals
 
 	fmt.Println("Testing SErr")
+
+	// We should safely ignore a nil err
+	ret := Wrap(nil, "We should be able to handle a nil error without crashing")
+	if ret != nil {
+		t.Error("We should return a nil when a nil error is wrapped", "got:", ret)
+	}
+
 	ser := NewSErr(
 		errors.New(strErr1),
 		[]string{"thing1", "thing1val", "thing2", "thing2val"},

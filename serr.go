@@ -45,8 +45,12 @@ func (se SErr) FieldsMap() map[string]string {
 // This requires an even number of fields unless a single field is given in which case it is added under the key "msg".
 // Returns an SErr (structured err)
 func Wrap(err error, fields ...string) error {
-	var flds []string
+	if err == nil {
+		println("SErr: Not wrapping a nil error")
+		return nil
+	}
 
+	var flds []string
 	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
 		flds = append(flds, se.fields...)  // add existing fields first
 	}
