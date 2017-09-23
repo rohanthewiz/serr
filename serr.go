@@ -20,6 +20,7 @@ func NewSErr(err error, fields []string) error {
 // Yes we are also an error type -- sweet!
 // Satisfy the `error` interface
 func (se SErr) Error() string {
+	if se.err == nil { return "" }
 	return se.err.Error()
 }
 
