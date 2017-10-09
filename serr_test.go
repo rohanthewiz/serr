@@ -44,14 +44,14 @@ func TestSErr(t *testing.T) {
 		}
 		// Test SErr#FieldsSlice
 		strFlds := se.FieldsSlice()
-		fmt.Println("[Debug] strFlds:", strFlds)  // debug
-		if len(strFlds) != 6 {
-			t.Error("Expected length of SErr.Fields() to be 6, got", len(strFlds))
+		fmt.Printf("[Debug] strFlds: %#v\n", strFlds)  // debug
+		if len(strFlds) != 8 {
+			t.Error("Expected length of SErr.Fields() to be 8, got", len(strFlds))
 		}
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
-		if len(mapFlds) != 2 {
-			t.Error("Expected length of SErr.MapFlds() to be 2, got", len(mapFlds))
+		if len(mapFlds) != 3 {
+			t.Error("Expected length of SErr.MapFlds() to be 3, got", len(mapFlds))
 			t.FailNow()
 		}
 
@@ -80,8 +80,8 @@ func TestSErr(t *testing.T) {
 		t.Error("er should be a SErr"); t.FailNow()
 	}
 	sl := se.FieldsSlice()
-	if len(sl) != 2 {
-		t.Error("Structured error from an error wrapped with a single field should contain two fields")
+	if len(sl) != 4 {
+		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
 	}
 	if len(sl) > 0 && sl[0] != "msg" {
 		t.Error("Structured error from an error wrapped with a single field should have 'map' as the first field")

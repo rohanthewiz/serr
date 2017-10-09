@@ -43,8 +43,9 @@ func (se SErr) FieldsMap() map[string]string {
 }
 
 // Wrap an existing error. Attribute keys and values must be strings.
-// This requires an even number of fields unless a single field is given in which case it is added under the key "msg".
 // Returns an SErr (structured err)
+// This requires an even number of fields unless a single field is given
+// in which case it is added under the key "msg".
 func Wrap(err error, fields ...string) error {
 	if err == nil {
 		println("SErr: Not wrapping a nil error")
@@ -61,6 +62,11 @@ func Wrap(err error, fields ...string) error {
 	} else {
 		flds = append(flds, fields...)
 	}
+
+	// Add location info on each wrap
+	flds = append(flds, "location")
+	flds = append(flds, FunctionLoc())
+
 	return SErr{err, flds}  // return
 }
 
