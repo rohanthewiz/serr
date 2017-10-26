@@ -1,5 +1,7 @@
 package serr
 
+import "fmt"
+
 // Structured Error wrapper
 // Supports wrapping of errors with a list of key, values to nicely support structured logging
 // Works nicely with logger.LogErr
@@ -28,11 +30,16 @@ func (se SErr) Error() string {
 func (se SErr) FieldsMap() map[string]string {
 	flds := map[string]string{}
 	key := ""
+	lenFields := len(se.fields)
 	for i, str := range se.fields {
-		if i % 2 == 0 {  // even indices are presumed to be keys
+		if i % 2 == 0 {
+			if i == lenFields - 1 {
+				fmt.Println("[SErr] Key:", str, "has no matching value", "location:", FunctionLoc(), "fields:", se.fields)
+				break  // this the last item - we don't have a matching value, so drop
+			}
 			key = str
 		} else {
-			if orig, ok := flds[key]; ok {  // we've seen this key before
+			if orig, ok := flds[key]; ok {  // we've seen this key before - accumulate
 				flds[key] = str + " - " + orig
 			} else {
 				flds[key] = str
@@ -46,17 +53,24 @@ func (se SErr) FieldsMap() map[string]string {
 // Returns an SErr (structured err)
 // This requires an even number of fields unless a single field is given
 // in which case it is added under the key "msg".
-func Wrap(err error, fields ...string) error {
+func Wrap(err error, fields ... string) error {
 	if err == nil {
-		println("SErr: Not wrapping a nil error")
+		fmt.Println("[SErr] Not wrapping a nil error", "location:", FunctionLoc(), "fields:", fields)
+		return nil
+	}
+	if ln := len(fields); ln > 1 && ln % 2 != 0 {
+		fmt.Println("[SErr] Odd number of fields provided", "location:", FunctionLoc(), "fields:", fields)
 		return nil
 	}
 
 	var flds []string
+
+	// Add Existing fields
 	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
-		flds = append(flds, se.fields...)  // add existing fields first
+		flds = append(flds, se.fields...)
 	}
 
+	// Add new fields
 	if len(fields) == 1 {
 		flds = append(flds, []string{"msg", fields[0]}...)
 	} else {
@@ -67,7 +81,7 @@ func Wrap(err error, fields ...string) error {
 	flds = append(flds, "location")
 	flds = append(flds, FunctionLoc())
 
-	return SErr{err, flds}  // return
+	return SErr{err, flds} // return
 }
 
 // Return the wrapped error

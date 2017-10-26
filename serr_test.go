@@ -84,7 +84,7 @@ func TestSErr(t *testing.T) {
 		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
 	}
 	if len(sl) > 0 && sl[0] != "msg" {
-		t.Error("Structured error from an error wrapped with a single field should have 'map' as the first field")
+		t.Error("Structured error from an error wrapped with a single field should have 'msg' as the first field, got", sl[0])
 	}
 	if len(sl) > 1 && sl[1] != thisIsMyMessage {
 		t.Errorf(`The structured error should have "%s" as the second field, got "%s"`, thisIsMyMessage, sl[1])
