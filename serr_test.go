@@ -14,8 +14,8 @@ func TestSErr(t *testing.T) {
 
 	// We should safely ignore a nil err
 	ret := Wrap(nil, "We should be able to handle a nil error without crashing")
-	if ret != nil {
-		t.Error("We should return a nil when a nil error is wrapped", "got:", ret)
+	if _, ok := ret.(error); !ok {
+		t.Error("We should return a generated error when a nil error is wrapped")
 	}
 
 	ser := NewSErr(

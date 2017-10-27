@@ -1,6 +1,9 @@
 package serr
 
-import "fmt"
+import (
+	"fmt"
+	"errors"
+)
 
 // Structured Error wrapper
 // Supports wrapping of errors with a list of key, values to nicely support structured logging
@@ -55,12 +58,14 @@ func (se SErr) FieldsMap() map[string]string {
 // in which case it is added under the key "msg".
 func Wrap(err error, fields ... string) error {
 	if err == nil {
-		fmt.Println("[SErr] Not wrapping a nil error", "location:", FunctionLoc(), "fields:", fields)
-		return nil
+		err = errors.New("[SErr] Not wrapping a nil error from " + FunctionLoc())
+		fmt.Println(err.Error(), "location:", FunctionLoc(), "fields:", fields)
+		return err
 	}
 	if ln := len(fields); ln > 1 && ln % 2 != 0 {
-		fmt.Println("[SErr] Odd number of fields provided", "location:", FunctionLoc(), "fields:", fields)
-		return nil
+		err = errors.New("[SErr] Odd number of fields provided from " + FunctionLoc())
+		fmt.Println(err.Error(), "location:", FunctionLoc(), "fields:", fields)
+		return err
 	}
 
 	var flds []string
