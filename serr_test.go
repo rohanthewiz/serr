@@ -42,8 +42,8 @@ func TestSErr(t *testing.T) {
 		// Test SErr#FieldsSlice
 		strFlds := se.FieldsSlice()
 		fmt.Printf("[Debug] strFlds: %#v\n", strFlds) // debug
-		if len(strFlds) != 10 {
-			t.Error("Expected length of SErr.Fields() to be 10, got", len(strFlds))
+		if len(strFlds) != 8 {
+			t.Error("Expected length of SErr.Fields() to be 8, got", len(strFlds))
 		}
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()

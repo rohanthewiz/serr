@@ -70,17 +70,32 @@ func (se SErr) FieldsMap() map[string]string {
 // Examples are given in serr_test.go
 func Wrap(err error, fields ...string) error {
 	var flds []string
-
 	err = handleNilError(err)
 
 	// Add Existing fields
 	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
 		flds = append(flds, se.fields...)
 	}
-
 	// Add new fields
 	flds = append(flds, buildFields(fields)...)
+	// Add location
+	flds = append(flds, []string{"location", FuncLoc(CallersParent)}...)
 
+	return SErr{err, flds} // return
+}
+
+// SpecialVersion of wrap that gives location of caller's grandparent
+func LogWrap(err error, fields ...string) error {
+	var flds []string
+	err = handleNilError(err)
+	// Add Existing fields
+	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
+		flds = append(flds, se.fields...)
+	}
+	// Add new fields
+	flds = append(flds, buildFields(fields)...)
+	// Add location
+	flds = append(flds, []string{"location", FuncLoc(CallersGrandParent)}...)
 	return SErr{err, flds} // return
 }
 
@@ -110,8 +125,6 @@ func buildFields(fields []string) (flds []string) {
 		}
 		flds = append(flds, fields...)
 	}
-	// Add location
-	flds = append(flds, []string{"location", FuncLoc(CallersGrandParent)}...)
 	return
 }
 
