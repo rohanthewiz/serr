@@ -1,9 +1,9 @@
 package serr
 
 import (
-	"testing"
-	"fmt"
 	"errors"
+	"fmt"
+	"testing"
 )
 
 func TestSErr(t *testing.T) {
@@ -14,14 +14,11 @@ func TestSErr(t *testing.T) {
 
 	// We should safely ignore a nil err
 	ret := Wrap(nil, "We should be able to handle a nil error without crashing")
-	if _, ok := ret.(error); !ok {
+	if _, ok := ret.(SErr); !ok {
 		t.Error("We should return a generated error when a nil error is wrapped")
 	}
 
-	ser := NewSErr(
-		errors.New(strErr1),
-		[]string{"thing1", "thing1val", "thing2", "thing2val"},
-	)
+	ser := NewSErr(errors.New(strErr1), "thing1", "thing1val", "thing2", "thing2val")
 	if ser.Error() != strErr1 {
 		t.Errorf("Expected custom error to contain '%s', got '%s'", strErr1, ser.Error())
 		t.FailNow()
@@ -44,9 +41,9 @@ func TestSErr(t *testing.T) {
 		}
 		// Test SErr#FieldsSlice
 		strFlds := se.FieldsSlice()
-		fmt.Printf("[Debug] strFlds: %#v\n", strFlds)  // debug
-		if len(strFlds) != 8 {
-			t.Error("Expected length of SErr.Fields() to be 8, got", len(strFlds))
+		fmt.Printf("[Debug] strFlds: %#v\n", strFlds) // debug
+		if len(strFlds) != 10 {
+			t.Error("Expected length of SErr.Fields() to be 10, got", len(strFlds))
 		}
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
@@ -77,7 +74,8 @@ func TestSErr(t *testing.T) {
 	er := Wrap(errors.New(strErr1), thisIsMyMessage)
 	se, ok = er.(SErr)
 	if !ok {
-		t.Error("er should be a SErr"); t.FailNow()
+		t.Error("er should be a SErr")
+		t.FailNow()
 	}
 	sl := se.FieldsSlice()
 	if len(sl) != 4 {
