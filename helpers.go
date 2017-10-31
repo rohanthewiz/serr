@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"os"
 )
 
 const (
@@ -44,11 +45,17 @@ func PathLevel(path string, level ...uint) (subpath string) {
 	if path == "" {
 		return path
 	}
-
-	tokens := strings.Split(path, string(filepath.Separator))
+	// On Windows filepath.Separator may not be that returned by runtime.Caller()
+	// This is the case under GitBash at least so leaning towards '/'.
+	sepr := '\\'
+	if os.IsPathSeparator('/') {  // If any O/S says this is legit, use it
+		sepr = '/'
+	}
+	separator := fmt.Sprintf("%c", sepr)
+	tokens := strings.Split(path, separator)
 	ln := len(tokens)
 	if ln <= 1 {
-		fmt.Println("path not split")
+		//fmt.Println("path not split")
 		return path
 	}
 
@@ -56,7 +63,7 @@ func PathLevel(path string, level ...uint) (subpath string) {
 	if idx < 0 {
 		idx = 0
 	}
-	return strings.Join(tokens[idx:], string(filepath.Separator))
+	return strings.Join(tokens[idx:], separator)
 }
 
 // This function is deprecated. Please use serr.FuncLoc()

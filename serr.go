@@ -18,8 +18,7 @@ type SErr struct {
 // Create a new SErr (structured err) from an existing error
 // wrapped with string fields of attribute key and value pairs.
 // Returns an error (SErr satisfies the error interface)
-// This requires an even number of fields unless a single field is given
-// in which case it is added under the key "msg".
+// This requires an even number of fields otherwise the first field is added under the key "msg".
 // Examples are given in serr_test.go
 func NewSErr(err error, fields ...string) error {
 	se := SErr{}
@@ -109,19 +108,19 @@ func (se SErr) FieldsSlice() []string {
 	return se.fields
 }
 
-// Process given array of strings
+// Process given array of strings, return sequence of attribute value pairs
+// A Single field gets added as {"msg", "field"}
+// For an odd number of multiple fields, the first field is considered a message value {"msg", "field"}
+// An even number of fields are added without any change in sequence
 func buildFields(fields []string) (flds []string) {
 	ln := len(fields)
-	// Single field becomes a "msg: field" pair
-	if ln == 1 {
+	if ln == 1 { // Single field becomes a "msg: field" pair
 		flds = append(flds, []string{"msg", fields[0]}...)
 	} else {
-		if ln%2 != 0 { // Deal with odd number of fields
-			fields = fields[:len(fields)-1] // drop the last - todo show the last
-			warn := fmt.Sprintf(`[SErr] Odd number of fields provided". The last will be chopped. Location: %s`,
-				FuncLoc(CallersGrandParent))
-			fmt.Println(warn)
-			flds = append(flds, []string{"serrWarn", warn}...)
+		if ln % 2 != 0 { // for odd fields, first is a message
+			msg := fields[0]
+			fields = fields[1:]  // drop the first
+			flds = append(flds, []string{"msg", msg}...)
 		}
 		flds = append(flds, fields...)
 	}
