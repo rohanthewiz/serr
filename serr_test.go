@@ -88,4 +88,20 @@ func TestSErr(t *testing.T) {
 		t.Errorf(`The structured error should have "%s" as the second field, got "%s"`, thisIsMyMessage, sl[1])
 		fmt.Println()
 	}
+
+	// We should be able to wrap with an odd number of fields
+	er2 := Wrap(errors.New(strErr1), "Wrapping odd number of fields", "key1", "value1", "key2", "value2")
+	se, ok = er2.(SErr)
+	if !ok {
+		t.Error("er should be a SErr")
+		t.FailNow()
+	}
+	arrFlds := se.FieldsSlice()
+	if ln := len(arrFlds); ln != 8 {
+		t.Error("Odd number of fields should use first field as a message. Expected 8 items in slice, got", ln)
+		t.FailNow()
+	}
+	if len(arrFlds) > 0 && arrFlds[0] != "msg" {
+		t.Error("Structured error from an error wrapped with a single field should have 'msg' as the first field, got", arrFlds[0])
+	}
 }
