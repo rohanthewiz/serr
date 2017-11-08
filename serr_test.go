@@ -18,7 +18,7 @@ func TestSErr(t *testing.T) {
 		t.Error("We should return a generated error when a nil error is wrapped")
 	}
 
-	ser := NewSErr(errors.New(strErr1), "thing1", "thing1val", "thing2", "thing2val")
+	ser := NewSErr(strErr1, "thing1", "thing1val", "thing2", "thing2val")
 	if ser.Error() != strErr1 {
 		t.Errorf("Expected custom error to contain '%s', got '%s'", strErr1, ser.Error())
 		t.FailNow()

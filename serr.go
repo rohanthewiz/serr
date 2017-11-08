@@ -15,14 +15,13 @@ type SErr struct {
 	fields []string
 }
 
-// Create a new SErr (structured err) from an existing error
-// wrapped with string fields of attribute key and value pairs.
+// Create a new SErr (structured err) from an error string and
+// embellish with string pairs of attributes and values
 // Returns an error (SErr satisfies the error interface)
 // This requires an even number of fields otherwise the first field is added under the key "msg".
 // Examples are given in serr_test.go
-func NewSErr(err error, fields ...string) error {
-	se := SErr{}
-	se.err = handleNilError(err)
+func NewSErr(er string, fields ...string) error {
+	se := SErr{err: errors.New(er)}
 	se.fields = buildFields(fields)
 	return se
 }
@@ -78,13 +77,14 @@ func Wrap(err error, fields ...string) error {
 	// Add new fields
 	flds = append(flds, buildFields(fields)...)
 	// Add location
-	flds = append(flds, []string{"location", FuncLoc(CallersParent)}...)
+	flds = append(flds, []string{"location", FuncLoc(CallerIndirection.Parent)}...)
 
 	return SErr{err, flds} // return
 }
 
-// SpecialVersion of wrap that gives location of caller's grandparent
-func LogWrap(err error, fields ...string) error {
+// SpecialVersion of wrap that takes callers indirection as a parameter
+// callerIndir should at least be grandparent
+func LogWrap(err error, callerIndir int, fields ...string) error {
 	var flds []string
 	err = handleNilError(err)
 	// Add Existing fields
@@ -94,7 +94,8 @@ func LogWrap(err error, fields ...string) error {
 	// Add new fields
 	flds = append(flds, buildFields(fields)...)
 	// Add location
-	flds = append(flds, []string{"location", FuncLoc(CallersGrandParent)}...)
+	if callerIndir < CallerIndirection.GrandParent { callerIndir = CallerIndirection.GrandParent }
+	flds = append(flds, []string{"location", FuncLoc(callerIndir)}...)
 	return SErr{err, flds} // return
 }
 
@@ -130,7 +131,7 @@ func buildFields(fields []string) (flds []string) {
 func handleNilError(err error) error {
 	if err == nil {
 		warn := fmt.Sprintf(`[SErr] nil error provided at %s. That is weird since this is an err function`,
-			FuncLoc(CallersGrandParent))
+			FuncLoc(CallerIndirection.GrandParent))
 		err = errors.New(warn)
 		fmt.Println(warn)
 	}

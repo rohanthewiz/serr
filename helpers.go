@@ -2,27 +2,30 @@ package serr
 
 import (
 	"fmt"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"os"
 )
 
-const (
-	Caller             = 1
-	CallersParent      = 2
-	CallersGrandParent = 3
-)
+//const (
+//	Caller             = 1
+//	CallersParent      = 2
+//	CallersGrandParent = 3
+//)
+var CallerIndirection = callerIndirection{1, 2, 3, 4}
+type callerIndirection struct {
+	Caller, Parent, GrandParent, GreatGrandParent int
+}
 
 // Return caller or ancestors calling location
-// Optional level can be
+// Optional caller indirection can be
 // 1 - immediate caller (default)
 // 2 - the callers parent
 // 3 - the callers grandparent -- you get the idea
-func FuncLoc(callerLevel ...int) string {
-	lvl := Caller
-	if len(callerLevel) > 0 {
-		lvl = callerLevel[0]
+func FuncLoc(callerIndir ...int) string {
+	lvl := CallerIndirection.Caller
+	if len(callerIndir) > 0 {
+		lvl = callerIndir[0]
 	}
 
 	_, file, line, ok := runtime.Caller(lvl)
@@ -67,10 +70,10 @@ func PathLevel(path string, level ...uint) (subpath string) {
 }
 
 // This function is deprecated. Please use serr.FuncLoc()
-func FunctionLoc() string {
-	_, file, line, ok := runtime.Caller(2)
-	if !ok {
-		return ""
-	}
-	return fmt.Sprintf("%s:%d", filepath.Base(file), line)
-}
+//func FunctionLoc() string {
+//	_, file, line, ok := runtime.Caller(2)
+//	if !ok {
+//		return ""
+//	}
+//	return fmt.Sprintf("%s:%d", filepath.Base(file), line)
+//}
