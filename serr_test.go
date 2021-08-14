@@ -14,17 +14,17 @@ func TestSErr(t *testing.T) {
 
 	// We should safely ignore a nil err
 	ret := Wrap(nil, "We should be able to handle a nil error without crashing")
-	if _, ok := ret.(SErr); !ok {
-		t.Error("We should return a generated error when a nil error is wrapped")
+	if ret != nil {
+		t.Error("We should return a nil when a nil error is wrapped", "got:", ret)
 	}
 
-	ser := NewSErr(strErr1, "thing1", "thing1val", "thing2", "thing2val")
+	ser := New(strErr1, "thing1", "thing1val", "thing2", "thing2val")
 	if ser.Error() != strErr1 {
 		t.Errorf("Expected custom error to contain '%s', got '%s'", strErr1, ser.Error())
 		t.FailNow()
 	}
 	if _, ok := ser.(SErr); !ok {
-		t.Error("ser should be a SErr")
+		t.Error("ber should be a SErr")
 		t.FailNow()
 	}
 
@@ -34,17 +34,19 @@ func TestSErr(t *testing.T) {
 	if !ok {
 		t.Error("Wrap should return an error containing a concrete SErr type")
 	} else {
-		// Test SErr#OriginalErr
-		strErr := se.OriginalErr().Error()
+		// Test SErr#GetError
+		strErr := se.GetError().Error()
 		if strErr != strErr1 {
 			t.Errorf(`Expected wrapped error string to be "%s", got "%s"`, strErr1, strErr)
 		}
-		// Test SErr#FieldsSlice
-		strFlds := se.FieldsSlice()
-		fmt.Printf("[Debug] strFlds: %#v\n", strFlds) // debug
-		if len(strFlds) != 8 {
-			t.Error("Expected length of SErr.Fields() to be 8, got", len(strFlds))
+
+		// Test SErr#Fields
+		strFlds := se.Fields()
+		fmt.Printf("[Debug] strFlds: %#v; Immediate location: %s\n", strFlds, FunctionLoc(CallerIndirection.Caller)) // debug
+		if len(strFlds) != 10 {
+			t.Error("Expected length of SErr.Fields() to be 10, got", len(strFlds))
 		}
+
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
 		if len(mapFlds) != 3 {
@@ -71,37 +73,55 @@ func TestSErr(t *testing.T) {
 
 	// We should be able to wrap with a single field which becomes `"msg": field`
 	const thisIsMyMessage = "This is my message"
+
 	er := Wrap(errors.New(strErr1), thisIsMyMessage)
 	se, ok = er.(SErr)
 	if !ok {
 		t.Error("er should be a SErr")
 		t.FailNow()
 	}
-	sl := se.FieldsSlice()
+
+	sl := se.Fields()
 	if len(sl) != 4 {
 		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
 	}
 	if len(sl) > 0 && sl[0] != "msg" {
-		t.Error("Structured error from an error wrapped with a single field should have 'msg' as the first field, got", sl[0])
+		t.Error("Structured error from an error wrapped with a single field should have 'map' as the first field")
 	}
 	if len(sl) > 1 && sl[1] != thisIsMyMessage {
 		t.Errorf(`The structured error should have "%s" as the second field, got "%s"`, thisIsMyMessage, sl[1])
 		fmt.Println()
 	}
 
-	// We should be able to wrap with an odd number of fields
-	er2 := Wrap(errors.New(strErr1), "Wrapping odd number of fields", "key1", "value1", "key2", "value2")
-	se, ok = er2.(SErr)
+	// Tsst WrapAsSErr
+	sr := WrapAsSErr(errors.New(strErr1), thisIsMyMessage, UserMsgKey, "Your account balance is very low", UserMsgSeverityKey, Severity.Warn)
+	sl = sr.Fields()
+	if len(sl) != 8 {
+		t.Error("Structured error from an error wrapped with a single field should contain 6 fields, got", len(sl))
+	}
+
+	newSr := NewSErr(strErr1, thisIsMyMessage)
+	nsf := newSr.Fields()
+	if len(nsf) != 4 {
+		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
+	}
+
+	// Test User Message
+	er = Wrap(errors.New(strErr1), thisIsMyMessage)
+	se, ok = er.(SErr)
 	if !ok {
 		t.Error("er should be a SErr")
 		t.FailNow()
 	}
-	arrFlds := se.FieldsSlice()
-	if ln := len(arrFlds); ln != 8 {
-		t.Error("Odd number of fields should use first field as a message. Expected 8 items in slice, got", ln)
-		t.FailNow()
+	sl = se.Fields()
+	if len(sl) != 4 {
+		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
 	}
-	if len(arrFlds) > 0 && arrFlds[0] != "msg" {
-		t.Error("Structured error from an error wrapped with a single field should have 'msg' as the first field, got", arrFlds[0])
+
+	const umsg = "Your app needs to be updated"
+	se.SetUserMsg(umsg, Severity.Warn)
+	if msg, sev := UserMsg(se); msg != umsg || sev != Severity.Warn {
+		t.Errorf(`User message or severity is not as expected.
+			Expected message %s, Got %s; Expected Severity %s, Got %s`, umsg, msg, Severity.Warn, sev)
 	}
 }
