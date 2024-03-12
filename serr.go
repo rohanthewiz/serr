@@ -20,8 +20,8 @@ type SErr struct {
 func New(er string, fields ...string) error {
 	se := SErr{err: errors.New(er)}
 	se.fields = fixupFields(fields)
-	// Add location info on each wrap
-	se.Append([]string{"location", FunctionLoc()}...)
+	// Add additional info on each wrap
+	se.AppendCallerContext()
 	return se
 }
 
@@ -30,7 +30,7 @@ func NewSErr(er string, fields ...string) SErr {
 	se := SErr{err: errors.New(er)}
 	se.fields = fixupFields(fields)
 	// Add location info on each wrap
-	se.Append([]string{"location", FunctionLoc()}...)
+	se.AppendCallerContext()
 	return se
 }
 
@@ -89,7 +89,7 @@ func (se SErr) FieldsString() string {
 
 // Satisfies the Stringer interface
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s --> %s", se.err, se.FieldsString())
+	return fmt.Sprintf("%s => %s", se.err, se.FieldsString())
 }
 
 // Use case: we want to use the convenience functions of SErr
@@ -105,7 +105,8 @@ func (se SErr) GetError() error {
 
 // Return the wrapped error
 // I believe this is the standard for Go
-// 	  see https://blog.golang.org/go1.13-errors#TOC_3.1.
+//
+//	see https://blog.golang.org/go1.13-errors#TOC_3.1.
 func (se SErr) Unwrap() error {
 	return se.err
 }
@@ -113,6 +114,12 @@ func (se SErr) Unwrap() error {
 // Return the internal list of keys and values
 func (se SErr) Fields() []string {
 	return se.fields
+}
+
+// AppendCallerContext adds Function name and location of the call to SErr new or wrapper functions
+func (se *SErr) AppendCallerContext() {
+	se.Append([]string{"location", FunctionLoc(FuncLevel3),
+		"function", FunctionName(FuncLevel3)}...)
 }
 
 // Convenience method for setting a user message field
@@ -151,7 +158,8 @@ func UserMsg(err error) (msg, severity string) {
 // in which case it is added under the key "msg".
 func Wrap(err error, fields ...string) error {
 	if err == nil {
-		println("SErr: Not wrapping a nil error", "called from", FunctionLoc())
+		println("SErr: Not wrapping a nil error", "callerLocation", FunctionLoc(FuncLevel2),
+			"callerName", FunctionName(FuncLevel2))
 		return nil
 	}
 
@@ -166,7 +174,7 @@ func Wrap(err error, fields ...string) error {
 	newSErr.Append(fixupFields(fields)...)
 
 	// Add location info on each wrap
-	newSErr.Append([]string{"location", FunctionLoc()}...)
+	newSErr.AppendCallerContext()
 
 	return newSErr // return
 }
@@ -177,7 +185,8 @@ func Wrap(err error, fields ...string) error {
 // in which case it is added under the key "msg".
 func WrapAsSErr(err error, fields ...string) SErr {
 	if err == nil {
-		println("SErr: Not wrapping a nil error", "called from", FunctionLoc())
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation", FunctionLoc(FuncLevel2),
+			"callerName", FunctionName(FuncLevel2))
 		return SErr{}
 	}
 
@@ -192,7 +201,7 @@ func WrapAsSErr(err error, fields ...string) SErr {
 	newSErr.Append(fixupFields(fields)...)
 
 	// Add location info on each wrap
-	newSErr.Append([]string{"location", FunctionLoc()}...)
+	newSErr.AppendCallerContext()
 
 	return newSErr // return
 }

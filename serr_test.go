@@ -42,14 +42,14 @@ func TestSErr(t *testing.T) {
 
 		// Test SErr#Fields
 		strFlds := se.Fields()
-		fmt.Printf("[Debug] strFlds: %#v; Immediate location: %s\n", strFlds, FunctionLoc(CallerIndirection.Caller)) // debug
-		if len(strFlds) != 10 {
+		fmt.Printf("[Debug] strFlds: %#v; Immediate location: %s\n", strFlds, FunctionLoc(FuncLevel1)) // debug
+		if len(strFlds) != 14 {
 			t.Error("Expected length of SErr.Fields() to be 10, got", len(strFlds))
 		}
 
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
-		if len(mapFlds) != 3 {
+		if len(mapFlds) != 4 {
 			t.Error("Expected length of SErr.MapFlds() to be 3, got", len(mapFlds))
 			t.FailNow()
 		}
@@ -82,8 +82,8 @@ func TestSErr(t *testing.T) {
 	}
 
 	sl := se.Fields()
-	if len(sl) != 4 {
-		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
+	if len(sl) != 6 {
+		t.Error("Structured error from an error wrapped with a single field should contain 6 fields, got", len(sl))
 	}
 	if len(sl) > 0 && sl[0] != "msg" {
 		t.Error("Structured error from an error wrapped with a single field should have 'map' as the first field")
@@ -93,17 +93,17 @@ func TestSErr(t *testing.T) {
 		fmt.Println()
 	}
 
-	// Tsst WrapAsSErr
+	// Test WrapAsSErr
 	sr := WrapAsSErr(errors.New(strErr1), thisIsMyMessage, UserMsgKey, "Your account balance is very low", UserMsgSeverityKey, Severity.Warn)
 	sl = sr.Fields()
-	if len(sl) != 8 {
-		t.Error("Structured error from an error wrapped with a single field should contain 6 fields, got", len(sl))
+	if len(sl) != 10 {
+		t.Error("Structured error from an error wrapped with a single field should contain 10 fields, got", len(sl))
 	}
 
 	newSr := NewSErr(strErr1, thisIsMyMessage)
 	nsf := newSr.Fields()
-	if len(nsf) != 4 {
-		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
+	if len(nsf) != 6 {
+		t.Error(fmt.Sprintf("Structured error from an error wrapped with a single field should contain %d fields, got %d", 6, len(nsf)))
 	}
 
 	// Test User Message
@@ -114,8 +114,8 @@ func TestSErr(t *testing.T) {
 		t.FailNow()
 	}
 	sl = se.Fields()
-	if len(sl) != 4 {
-		t.Error("Structured error from an error wrapped with a single field should contain 4 fields, got", len(sl))
+	if len(sl) != 6 {
+		t.Error("Structured error from an error wrapped with a single field should contain 6 fields, got", len(sl))
 	}
 
 	const umsg = "Your app needs to be updated"

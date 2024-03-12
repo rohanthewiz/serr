@@ -1,35 +1,24 @@
 package serr
 
 import (
-	"fmt"
-	"path/filepath"
-	"runtime"
+	"strconv"
 	"strings"
 )
 
-// Public convenience var for providing caller indirection typically for FunctionLoc
-var CallerIndirection = struct {
-	Caller, CallersParent, CallersGrandParent, CallersGreatGrandParent int
-}{1, 2, 3, 4}
+// ArrayToString conveniently returns a slice of str items as a nicely formatted string
+// If a limit greater than 0 is supplied the output is nicely truncated with ellipses
+func ArrayToString(strArr []string, delim string, limit int, listName string) (out string) {
+	lnArr := len(strArr)
 
-func FunctionLoc(indirection ...int) string {
-	skip := 2
-	if len(indirection) > 0 {
-		skip = indirection[0]
+	if lnArr == 0 {
+		out = "0 " + listName
+		return
 	}
 
-	const pathSeparator = "/"
-	_, fPath, line, ok := runtime.Caller(skip)
-	if !ok {
-		return ""
-	}
-
-	var partialPath string
-	tokens := strings.Split(fPath, "/")
-	if len(tokens) >= 2 {
-		partialPath = strings.Join(tokens[len(tokens)-2:], pathSeparator)
+	if limit > 0 && lnArr > limit {
+		out = strconv.Itoa(lnArr) + " " + listName + ": " + strings.Join(strArr[:limit], delim) + "..."
 	} else {
-		partialPath = filepath.Base(fPath)
+		out = strings.Join(strArr, delim)
 	}
-	return fmt.Sprintf("%s:%d", partialPath, line)
+	return
 }
