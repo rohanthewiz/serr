@@ -7,7 +7,7 @@ import (
 )
 
 func TestSErr(t *testing.T) {
-	const strErr1 = "Ok. This is a test err"
+	const strErr1 = "This is a test err"
 	// todo: constantize most test literals
 
 	fmt.Println("Testing SErr")
@@ -24,9 +24,11 @@ func TestSErr(t *testing.T) {
 		t.FailNow()
 	}
 	if _, ok := ser.(SErr); !ok {
-		t.Error("ber should be a SErr")
+		t.Error("ser should be a SErr")
 		t.FailNow()
-	}
+	} /*else {
+		t.Log("at this point ser is:", s.String())
+	}*/
 
 	// Add some fields to an existing sErr
 	err := Wrap(ser, "thing2", "thing2NewVal")
@@ -42,15 +44,15 @@ func TestSErr(t *testing.T) {
 
 		// Test SErr#Fields
 		strFlds := se.Fields()
-		fmt.Printf("[Debug] strFlds: %#v; Immediate location: %s\n", strFlds, FunctionLoc(FuncLevel1)) // debug
+		// fmt.Printf("[Debug] strFlds: %#v; Immediate location: %s\n", strFlds, FunctionLoc(FuncLevel1)) // debug
 		if len(strFlds) != 14 {
-			t.Error("Expected length of SErr.Fields() to be 10, got", len(strFlds))
+			t.Error("Expected length of SErr.Fields() to be 14, got", len(strFlds))
 		}
 
 		// Test SErr#FieldsMap
 		mapFlds := se.FieldsMap()
 		if len(mapFlds) != 4 {
-			t.Error("Expected length of SErr.MapFlds() to be 3, got", len(mapFlds))
+			t.Error("Expected length of SErr.MapFlds() to be 4, got", len(mapFlds))
 			t.FailNow()
 		}
 

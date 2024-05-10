@@ -19,25 +19,21 @@ type SErr struct {
 // New returns a new SErr as an error type
 func New(er string, fields ...string) error {
 	se := SErr{err: errors.New(er)}
-	se.fields = fixupFields(fields)
-	// Add additional info on each wrap
-	se.AppendCallerContext()
-	return se
+	return se.newSErr(fields...)
 }
 
 // NewSerr returns a new concrete SErr
 func NewSErr(er string, fields ...string) SErr {
-	se := SErr{err: errors.New(er)}
-	se.fields = fixupFields(fields)
-	// Add location info on each wrap
-	se.AppendCallerContext()
-	return se
+	ser := SErr{err: errors.New(er)}
+	return ser.newSErr(fields...)
 }
 
-// Append adds variable number of strings to the SErr
-// These should be key value pairs
-func (se *SErr) Append(fields ...string) {
-	se.fields = append(se.fields, fields...)
+// AppendKeyValPairs adds pairs of attribute-values to the SErr
+// *Note* this method will be used by SErr aware loggers to add extra fields
+// at the time of logging, so let's maintain the function signature
+func (se *SErr) AppendKeyValPairs(keyValPairs ...string) {
+	keyValPairs = fixupFields(keyValPairs) // it doesn't hurt to always fix up fields
+	se.fields = append(se.fields, keyValPairs...)
 }
 
 // AppendIfHasErr adds variable number of strings to the SErr
@@ -116,10 +112,11 @@ func (se SErr) Fields() []string {
 	return se.fields
 }
 
-// AppendCallerContext adds Function name and location of the call to SErr new or wrapper functions
-func (se *SErr) AppendCallerContext() {
-	se.Append([]string{"location", FunctionLoc(FuncLevel3),
-		"function", FunctionName(FuncLevel3)}...)
+// appendCallerContext adds Function name and location of the call to SErr new or wrapper functions
+// TODO add *optional* param for function level
+func (se *SErr) appendCallerContext() {
+	se.AppendKeyValPairs([]string{"location", FunctionLoc(FuncLevel4),
+		"function", FunctionName(FuncLevel4)}...)
 }
 
 // Convenience method for setting a user message field
@@ -152,58 +149,60 @@ func UserMsg(err error) (msg, severity string) {
 	return
 }
 
-// Wrap an existing error. Attribute keys and values must be strings.
+// newSErr is the core method for creating a new SErr from an existing SErr
+// This is used in Wrap, New and other methods that add key val pairs and context
+func (ser SErr) newSErr(pairs ...string) (out SErr) {
+	out = SErr{err: ser.err} // add the internal error
+
+	// Add any existing fields first
+	if len(ser.fields) > 0 {
+		out.AppendKeyValPairs(ser.fields...) // add existing fields first
+	}
+
+	// Add new fields
+	out.AppendKeyValPairs(pairs...)
+
+	// Add location info on each wrap
+	out.appendCallerContext()
+	return
+}
+
+// SerrFromErr builds an SErr if err does not contain a concrete SErr
+// otherwise returns the concrete SErr.
+func SerrFromErr(err error) SErr {
+	if ser, ok := err.(SErr); !ok {
+		return SErr{err: err}
+	} else {
+		return ser
+	}
+}
+
+// Wrap wraps an existing error. Attribute keys and values must be strings.
 // Returns an SErr (structured err) as an error
 // This requires an even number of fields unless a single field is given
 // in which case it is added under the key "msg".
 func Wrap(err error, fields ...string) error {
 	if err == nil {
-		println("SErr: Not wrapping a nil error", "callerLocation", FunctionLoc(FuncLevel2),
-			"callerName", FunctionName(FuncLevel2))
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FuncLevel2),
+			"callerName:", FunctionName(FuncLevel2))
 		return nil
 	}
 
-	newSErr := SErr{err, []string{}}
-
-	// Add any existing fields first
-	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
-		newSErr.Append(se.fields...) // add existing fields first
-	}
-
-	// Add new fields
-	newSErr.Append(fixupFields(fields)...)
-
-	// Add location info on each wrap
-	newSErr.AppendCallerContext()
-
-	return newSErr // return
+	return SerrFromErr(err).newSErr(fields...)
 }
 
-// Wrap an existing error. Attribute keys and values must be strings.
+// WrapAsSErr wraps an existing error. Attribute keys and values must be strings.
 // Returns a concrete SErr (structured err)
 // This requires an even number of fields unless a single field is given
 // in which case it is added under the key "msg".
 func WrapAsSErr(err error, fields ...string) SErr {
 	if err == nil {
-		fmt.Println("SErr: Not wrapping a nil error", "callerLocation", FunctionLoc(FuncLevel2),
-			"callerName", FunctionName(FuncLevel2))
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FuncLevel2),
+			"callerName:", FunctionName(FuncLevel2))
 		return SErr{}
 	}
 
-	newSErr := SErr{err, []string{}}
-
-	// Add any existing fields first
-	if se, ok := err.(SErr); ok && len(se.fields) > 0 {
-		newSErr.Append(se.fields...) // add existing fields first
-	}
-
-	// Add new fields
-	newSErr.Append(fixupFields(fields)...)
-
-	// Add location info on each wrap
-	newSErr.AppendCallerContext()
-
-	return newSErr // return
+	return SerrFromErr(err).newSErr(fields...)
 }
 
 // Fix up sequence of attribute value pairs
@@ -212,14 +211,16 @@ func WrapAsSErr(err error, fields ...string) SErr {
 // An even number of fields are added without any change in sequence
 func fixupFields(fields []string) (flds []string) {
 	ln := len(fields)
+
 	if ln == 1 { // Single field becomes a "msg: field" pair
 		flds = append(flds, []string{"msg", fields[0]}...)
 	} else {
-		if ln%2 != 0 { // for odd fields, first is a message
+		if ln%2 != 0 { // for odd fields, treat the first as a message
 			msg := fields[0]
-			fields = fields[1:] // drop the first
-			flds = append(flds, []string{"msg", msg}...)
+			fields = fields[1:]                          // drop the first
+			flds = append(flds, []string{"msg", msg}...) // add as first pair
 		}
+		// Add fields
 		flds = append(flds, fields...)
 	}
 	return
