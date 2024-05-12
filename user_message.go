@@ -3,21 +3,26 @@ package serr
 const UserMsgKey = "userMsgKey"                 // user message key
 const UserMsgSeverityKey = "userMsgSeverityKey" // user message severity key
 
-var Severity severity
+type UserMsgOptions struct {
+	Severity string
+}
 
+// poor man's enum
 type severity struct {
 	Success, Error, Warn, Info string
 }
 
-func init() {
-	Severity = severity{
-		Success: "success",
-		Error:   "error",
-		Warn:    "warn",
-		Info:    "info",
-	}
-}
+var Severity = severity{"success", "error", "warn", "info"}
 
-type UserMsgOptions struct {
-	Severity string
+// UserMsg is a convenience function for getting the user message,
+// and severity fields from a standard error
+// This could be a message displayed to the user of the app
+func UserMsg(err error) (msg, severity string) {
+	if err == nil {
+		return
+	}
+	if ser, ok := err.(SErr); ok {
+		msg, severity = ser.UserMsg()
+	}
+	return
 }

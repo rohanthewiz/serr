@@ -1,3 +1,3 @@
 module github.com/rohanthewiz/serr
 
-go 1.14
+go 1.19

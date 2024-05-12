@@ -8,6 +8,8 @@ import (
 
 func TestSErr(t *testing.T) {
 	const strErr1 = "This is a test err"
+	const thisIsMyMessage = "This is my message"
+
 	// todo: constantize most test literals
 
 	fmt.Println("Testing SErr")
@@ -74,7 +76,6 @@ func TestSErr(t *testing.T) {
 	}
 
 	// We should be able to wrap with a single field which becomes `"msg": field`
-	const thisIsMyMessage = "This is my message"
 
 	er := Wrap(errors.New(strErr1), thisIsMyMessage)
 	se, ok = er.(SErr)
@@ -106,24 +107,5 @@ func TestSErr(t *testing.T) {
 	nsf := newSr.Fields()
 	if len(nsf) != 6 {
 		t.Error(fmt.Sprintf("Structured error from an error wrapped with a single field should contain %d fields, got %d", 6, len(nsf)))
-	}
-
-	// Test User Message
-	er = Wrap(errors.New(strErr1), thisIsMyMessage)
-	se, ok = er.(SErr)
-	if !ok {
-		t.Error("er should be a SErr")
-		t.FailNow()
-	}
-	sl = se.Fields()
-	if len(sl) != 6 {
-		t.Error("Structured error from an error wrapped with a single field should contain 6 fields, got", len(sl))
-	}
-
-	const umsg = "Your app needs to be updated"
-	se.SetUserMsg(umsg, Severity.Warn)
-	if msg, sev := UserMsg(se); msg != umsg || sev != Severity.Warn {
-		t.Errorf(`User message or severity is not as expected.
-			Expected message %s, Got %s; Expected Severity %s, Got %s`, umsg, msg, Severity.Warn, sev)
 	}
 }

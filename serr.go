@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// Backend Structured Error wrapper
+// SErr is a Structured Error wrapper
 // Supports wrapping of errors with a list of key, values to nicely support structured logging
-// Works nicely with logger.LogErr
+// Works nicely with github.com/rohanthewiz/logger
 type SErr struct {
 	err error // the usual error
 	// support structured logging of the format key1, val1, key2, val2
@@ -22,7 +22,7 @@ func New(er string, fields ...string) error {
 	return se.newSErr(fields...)
 }
 
-// NewSerr returns a new concrete SErr
+// NewSErr returns a new concrete SErr
 func NewSErr(er string, fields ...string) SErr {
 	ser := SErr{err: errors.New(er)}
 	return ser.newSErr(fields...)
@@ -36,26 +36,18 @@ func (se *SErr) AppendKeyValPairs(keyValPairs ...string) {
 	se.fields = append(se.fields, keyValPairs...)
 }
 
-// AppendIfHasErr adds variable number of strings to the SErr
-// These should be key value pairs on condition
-// that the wrapped error is not nil
-func (se *SErr) AppendIfHasErr(fields ...string) {
-	if se.err != nil {
-		se.fields = append(se.fields, fields...)
-	}
-}
-
-// Yes we are also an error type -- sweet!
-// Satisfy the `error` interface
+// Error satisfies the `error` interface
 // The contract here is to return the value of the core error
 func (se SErr) Error() string {
 	if se.err == nil {
-		return ""
+		return "SErr: internal error not set"
 	}
 	return se.err.Error()
 }
 
-// Return all SErr attributes as a map of string keys and values
+// FieldsMap returns all SErr attributes as a map of string keys and values.
+// Values of duplicate fields are appended together with ' - '
+// such that the innermost attributes are to the right
 func (se SErr) FieldsMap() map[string]string {
 	flds := map[string]string{}
 	key := ""
@@ -73,8 +65,8 @@ func (se SErr) FieldsMap() map[string]string {
 	return flds
 }
 
-// Build output for non-structured logging
-func (se SErr) FieldsString() string {
+// FieldsAsString builds output for non-structured logging
+func (se SErr) FieldsAsString() string {
 	mp := se.FieldsMap()
 	arr := make([]string, 0, len(mp))
 	for key, val := range mp {
@@ -83,70 +75,38 @@ func (se SErr) FieldsString() string {
 	return strings.Join(arr, "; ")
 }
 
-// Satisfies the Stringer interface
+// String satisfies the Stringer interface, so this is the default method called by fmt
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s => %s", se.err, se.FieldsString())
+	return fmt.Sprintf("%s => %s", se.err, se.FieldsAsString())
 }
 
-// Use case: we want to use the convenience functions of SErr
-// to build an error then assign it to an existing SErr
+// Clone returns a new SErr from an existing one
 func (se SErr) Clone() SErr {
 	return SErr{se.err, se.fields}
 }
 
-// Return the wrapped error
+// GetError returns the wrapped error
 func (se SErr) GetError() error {
 	return se.err
 }
 
-// Return the wrapped error
-// I believe this is the standard for Go
+// Unwrap returns the wrapped error
+// This is the standard for Go
 //
 //	see https://blog.golang.org/go1.13-errors#TOC_3.1.
 func (se SErr) Unwrap() error {
 	return se.err
 }
 
-// Return the internal list of keys and values
+// Fields returns the internal list of keys and values
 func (se SErr) Fields() []string {
 	return se.fields
 }
 
 // appendCallerContext adds Function name and location of the call to SErr new or wrapper functions
-// TODO add *optional* param for function level
-func (se *SErr) appendCallerContext() {
-	se.AppendKeyValPairs([]string{"location", FunctionLoc(FuncLevel4),
-		"function", FunctionName(FuncLevel4)}...)
-}
-
-// Convenience method for setting a user message field
-// This is a message displayable to the user of the app
-func (se *SErr) SetUserMsg(msg string, sev string) {
-	userInfo := []string{UserMsgKey, msg, UserMsgSeverityKey, sev}
-	se.fields = append(se.fields, userInfo...)
-}
-
-// Convenience method to return the user message field
-// This is a message displayable to the user of the app
-func (se SErr) UserMsg() (userMsg, severity string) {
-	mp := se.FieldsMap()
-	if str, ok := mp[UserMsgKey]; ok {
-		userMsg = str
-	}
-	if str, ok := mp[UserMsgSeverityKey]; ok {
-		severity = str
-	}
-	return
-}
-
-// Convenience function for getting the user message, and severity fields
-// from a standard error
-// This is a message displayable to the user of the app
-func UserMsg(err error) (msg, severity string) {
-	if ser, ok := err.(SErr); ok {
-		msg, severity = ser.UserMsg()
-	}
-	return
+func (se *SErr) appendCallerContext(frmLevel int) {
+	se.AppendKeyValPairs([]string{"location", FunctionLoc(frmLevel),
+		"function", FunctionName(frmLevel)}...)
 }
 
 // newSErr is the core method for creating a new SErr from an existing SErr
@@ -163,7 +123,7 @@ func (ser SErr) newSErr(pairs ...string) (out SErr) {
 	out.AppendKeyValPairs(pairs...)
 
 	// Add location info on each wrap
-	out.appendCallerContext()
+	out.appendCallerContext(FrameLevels.FrameLevel4)
 	return
 }
 
@@ -183,8 +143,8 @@ func SerrFromErr(err error) SErr {
 // in which case it is added under the key "msg".
 func Wrap(err error, fields ...string) error {
 	if err == nil {
-		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FuncLevel2),
-			"callerName:", FunctionName(FuncLevel2))
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FrameLevels.FrameLevel2),
+			"callerName:", FunctionName(FrameLevels.FrameLevel2))
 		return nil
 	}
 
@@ -197,15 +157,16 @@ func Wrap(err error, fields ...string) error {
 // in which case it is added under the key "msg".
 func WrapAsSErr(err error, fields ...string) SErr {
 	if err == nil {
-		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FuncLevel2),
-			"callerName:", FunctionName(FuncLevel2))
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FrameLevels.FrameLevel2),
+			"callerName:", FunctionName(FrameLevels.FrameLevel2))
 		return SErr{}
 	}
 
 	return SerrFromErr(err).newSErr(fields...)
 }
 
-// Fix up sequence of attribute value pairs
+//	fixupFields fixes up a  sequence of attribute value pairs
+//
 // A Single field gets added as {"msg", "field"}
 // For an odd number of multiple fields, the first field is considered a message value {"msg", "field"}
 // An even number of fields are added without any change in sequence
@@ -222,6 +183,26 @@ func fixupFields(fields []string) (flds []string) {
 		}
 		// Add fields
 		flds = append(flds, fields...)
+	}
+	return
+}
+
+// SetUserMsg is a convenience method for setting a user message field
+// This could be displayed to the user of the app
+func (se *SErr) SetUserMsg(msg string, sev string) {
+	userInfo := []string{UserMsgKey, msg, UserMsgSeverityKey, sev}
+	se.fields = append(se.fields, userInfo...)
+}
+
+// UserMsg is a convenience method to return the user message field
+// This could be a message displayed to the user of the app
+func (se SErr) UserMsg() (userMsg, severity string) {
+	mp := se.FieldsMap()
+	if str, ok := mp[UserMsgKey]; ok {
+		userMsg = str
+	}
+	if str, ok := mp[UserMsgSeverityKey]; ok {
+		severity = str
 	}
 	return
 }

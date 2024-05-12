@@ -1,53 +1,70 @@
 package serr
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
-func TestArrayToString(t *testing.T) {
+func TestLastNTokens(t *testing.T) {
 	type args struct {
-		strArr   []string
-		delim    string
-		limit    int
-		listName string
+		str       string
+		separator string
+		numTokens int
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantOut string
+		name           string
+		args           args
+		wantLastTokens string
 	}{
-		{name: "Empty list",
-			args: args{
-				strArr:   []string{},
-				delim:    ", ",
-				limit:    0,
-				listName: "Animals",
-			},
-			wantOut: "0 Animals",
+		{
+			name:           "Test Last N Tokens 1",
+			args:           args{str: "abc/def/ghi", separator: "/", numTokens: 2},
+			wantLastTokens: "def/ghi",
 		},
-		{name: "Short list with no limit",
-			args: args{
-				strArr:   []string{"cat", "dog", "mouse"},
-				delim:    ", ",
-				limit:    0,
-				listName: "Animals",
-			},
-			wantOut: "cat, dog, mouse",
+		{
+			name:           "Test Last N Tokens 2",
+			args:           args{str: "abcdefg", separator: "/", numTokens: 2},
+			wantLastTokens: "abcdefg",
 		},
-		{name: "List with limit",
-			args: args{
-				strArr: []string{"cat", "dog", "mouse", "horse", "mule", "donkey", "zebra",
-					"lion", "dog", "mouse", "horse", "mule", "donkey", "zebra"},
-				delim:    ", ",
-				limit:    5,
-				listName: "Animals",
-			},
-			wantOut: "14 Animals: cat, dog, mouse, horse, mule...",
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotLastTokens := LastNTokens(tt.args.str, tt.args.separator, tt.args.numTokens); gotLastTokens != tt.wantLastTokens {
+				t.Errorf("Last2Tokens() = %v, want %v", gotLastTokens, tt.wantLastTokens)
+			}
+		})
+	}
+}
+
+func TestStringFromErr(t *testing.T) {
+	tests := []struct {
+		name    string
+		err     error
+		want    string
+		wantAlt string
+	}{
+		{
+			name: "Nil error",
+			err:  nil,
+			want: "",
+		},
+		{
+			name: "Standard error",
+			err:  errors.New("standard error"),
+			want: "standard error",
+		},
+		{
+			name:    "SErr with message",
+			err:     NewSErr("serr message"),
+			want:    "serr message => function->rohanthewiz/serr.TestStringFromErr; location->serr/helpers_test.go:58",
+			wantAlt: "serr message => location->serr/helpers_test.go:58; function->rohanthewiz/serr.TestStringFromErr",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOut := ArrayToString(tt.args.strArr, tt.args.delim, tt.args.limit, tt.args.listName); gotOut != tt.wantOut {
-				t.Errorf("ArrayToString() = %v, want %v", gotOut, tt.wantOut)
+			if got := StringFromErr(tt.err); !(got == tt.want || (tt.wantAlt != "" && got == tt.wantAlt)) {
+				t.Errorf("StringFromErr() = %v, want %v or %v", got, tt.want, tt.wantAlt)
 			}
 		})
 	}
