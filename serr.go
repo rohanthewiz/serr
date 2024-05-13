@@ -127,9 +127,9 @@ func (ser SErr) newSErr(pairs ...string) (out SErr) {
 	return
 }
 
-// SerrFromErr builds an SErr if err does not contain a concrete SErr
-// otherwise returns the concrete SErr.
-func SerrFromErr(err error) SErr {
+// NewSerrNoContext builds an SErr from an err without addition of frame context.
+// If err already contains a concrete SErr, it is returned
+func NewSerrNoContext(err error) SErr {
 	if ser, ok := err.(SErr); !ok {
 		return SErr{err: err}
 	} else {
@@ -148,7 +148,7 @@ func Wrap(err error, fields ...string) error {
 		return nil
 	}
 
-	return SerrFromErr(err).newSErr(fields...)
+	return NewSerrNoContext(err).newSErr(fields...)
 }
 
 // WrapAsSErr wraps an existing error. Attribute keys and values must be strings.
@@ -162,7 +162,7 @@ func WrapAsSErr(err error, fields ...string) SErr {
 		return SErr{}
 	}
 
-	return SerrFromErr(err).newSErr(fields...)
+	return NewSerrNoContext(err).newSErr(fields...)
 }
 
 //	fixupFields fixes up a  sequence of attribute value pairs
