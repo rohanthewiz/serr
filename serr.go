@@ -77,7 +77,7 @@ func (se SErr) FieldsAsString() string {
 
 // String satisfies the Stringer interface, so this is the default method called by fmt
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s => %s", se.err, se.FieldsAsString())
+	return fmt.Sprintf("%s [error_attrs] => %s", se.err, se.FieldsAsString())
 }
 
 // Clone returns a new SErr from an existing one
