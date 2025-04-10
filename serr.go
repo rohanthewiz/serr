@@ -17,8 +17,8 @@ type SErr struct {
 }
 
 // New returns a new SErr as an error type
-func New(er string, fields ...string) error {
-	se := SErr{err: errors.New(er)}
+func New(erStr string, fields ...string) error {
+	se := SErr{err: errors.New(erStr)}
 	return se.newSErr(fields...)
 }
 
@@ -26,6 +26,13 @@ func New(er string, fields ...string) error {
 func NewSErr(er string, fields ...string) SErr {
 	ser := SErr{err: errors.New(er)}
 	return ser.newSErr(fields...)
+}
+
+// F builds an SErr from a formatted string
+// in similar vein to fmt.ErrorF, python's f"", etc.
+func F(format string, fields ...any) error {
+	se := SErr{err: fmt.Errorf(format, fields...)}
+	return se.newSErr()
 }
 
 // AppendKeyValPairs adds pairs of attribute-values to the SErr

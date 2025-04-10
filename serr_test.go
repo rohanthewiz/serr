@@ -3,6 +3,7 @@ package serr
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -107,5 +108,44 @@ func TestSErr(t *testing.T) {
 	nsf := newSr.Fields()
 	if len(nsf) != 6 {
 		t.Error(fmt.Sprintf("Structured error from an error wrapped with a single field should contain %d fields, got %d", 6, len(nsf)))
+	}
+}
+
+func TestF(t *testing.T) {
+	const expectedErr = "test error: 42"
+
+	err := F("test error: %d", 42)
+
+	// Test that it returns a proper error
+	if err == nil {
+		t.Error("F() returned nil instead of an error")
+	}
+
+	// Test that the error message is correctly formatted
+	if err.Error() != expectedErr {
+		t.Errorf("Expected error message '%s', got '%s'", expectedErr, err.Error())
+	}
+
+	// Test that it returns a SErr type
+	se, ok := err.(SErr)
+	if !ok {
+		t.Error("F() should return a SErr type")
+		return
+	}
+
+	// Test that location and function fields were added
+	fields := se.FieldsMap()
+	if _, ok := fields["location"]; !ok {
+		t.Error("Expected 'location' field to be present")
+	}
+
+	if _, ok := fields["function"]; !ok {
+		t.Error("Expected 'function' field to be present")
+	}
+
+	// Test the string representation
+	strErr := se.String()
+	if !strings.Contains(strErr, expectedErr) {
+		t.Errorf("String() should contain '%s', got '%s'", expectedErr, strErr)
 	}
 }
