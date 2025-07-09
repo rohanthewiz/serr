@@ -11,8 +11,9 @@ var FrameLevels = frameLevel{0, 1, 2, 3, 4, 5}
 
 // frameLevel is a representation of the current stack frame level
 // as a distance from the frame getting some kind of context from the runtime
+// Current frame is 0, Parent - 1, etc
 type frameLevel struct {
-	// Same frame
+	// Currently executing frame
 	FrameLevel0,
 	// Parent
 	FrameLevel1,

@@ -110,10 +110,13 @@ func (se SErr) Fields() []string {
 	return se.fields
 }
 
-// appendCallerContext adds Function name and location of the call to SErr new or wrapper functions
-func (se *SErr) appendCallerContext(frmLevel int) {
-	se.AppendKeyValPairs([]string{"location", FunctionLoc(frmLevel),
-		"function", FunctionName(frmLevel)}...)
+// AppendCallerContext adds Function name and location of the call to SErr.
+// typically used in new or wrapper functions
+func (se *SErr) AppendCallerContext(frameLevel int) {
+	se.AppendKeyValPairs([]string{
+		"location", FunctionLoc(frameLevel),
+		"function", FunctionName(frameLevel),
+	}...)
 }
 
 // newSErr is the core method for creating a new SErr from an existing SErr
@@ -130,7 +133,7 @@ func (ser SErr) newSErr(pairs ...string) (out SErr) {
 	out.AppendKeyValPairs(pairs...)
 
 	// Add location info on each wrap
-	out.appendCallerContext(FrameLevels.FrameLevel4)
+	out.AppendCallerContext(FrameLevels.FrameLevel4)
 	return
 }
 
