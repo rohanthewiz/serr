@@ -13,7 +13,7 @@ type SErr struct {
 	err error // the usual error
 	// support structured logging of the format key1, val1, key2, val2
 	// Repeated keys are allowed and will be concatenated in log output
-	fields []string
+	fields []any
 }
 
 // New returns a new SErr as an error type
@@ -36,11 +36,22 @@ func F(format string, fields ...any) error {
 }
 
 // AppendKeyValPairs adds pairs of attribute-values to the SErr
-// *Note* this method will be used by SErr aware loggers to add extra fields
-// at the time of logging, so let's maintain the function signature
 func (se *SErr) AppendKeyValPairs(keyValPairs ...string) {
-	keyValPairs = fixupFields(keyValPairs) // it doesn't hurt to always fix up fields
-	se.fields = append(se.fields, keyValPairs...)
+	// convert string key val pairs into slice of any
+	var arrAny []any
+	for _, kv := range keyValPairs {
+		arrAny = append(arrAny, kv)
+	}
+
+	arrAny = fixupFields(arrAny) // it doesn't hurt to always fix up fields
+	se.fields = append(se.fields, arrAny...)
+}
+
+// AppendAttributes adds pairs of attribute-values of any type to the SErr
+// *Note* this method will be used by SErr aware loggers to add extra fields
+// at the time of logging
+func (se *SErr) AppendAttributes(attrs ...any) {
+	se.fields = append(se.fields, fixupFields(attrs)...)
 }
 
 // Error satisfies the `error` interface
@@ -60,12 +71,12 @@ func (se SErr) FieldsMap() map[string]string {
 	key := ""
 	for i, str := range se.fields {
 		if i%2 == 0 { // even indices are presumed to be keys
-			key = str
+			key = fmt.Sprintf("%v", str)
 		} else {
 			if orig, ok := flds[key]; ok { // we've seen this key before
-				flds[key] = str + " - " + orig
+				flds[key] = fmt.Sprintf("%v", str) + " - " + orig
 			} else {
-				flds[key] = str
+				flds[key] = fmt.Sprintf("%v", str)
 			}
 		}
 	}
@@ -106,8 +117,11 @@ func (se SErr) Unwrap() error {
 }
 
 // Fields returns the internal list of keys and values
-func (se SErr) Fields() []string {
-	return se.fields
+func (se SErr) Fields() (strFields []string) {
+	for _, fld := range se.fields {
+		strFields = append(strFields, fmt.Sprintf("%v", fld))
+	}
+	return
 }
 
 // AppendCallerContext adds Function name and location of the call to SErr.
@@ -126,7 +140,7 @@ func (ser SErr) newSErr(pairs ...string) (out SErr) {
 
 	// Add any existing fields first
 	if len(ser.fields) > 0 {
-		out.AppendKeyValPairs(ser.fields...) // add existing fields first
+		out.AppendAttributes(ser.fields...) // add existing fields first
 	}
 
 	// Add new fields
@@ -180,16 +194,16 @@ func WrapAsSErr(err error, fields ...string) SErr {
 // A Single field gets added as {"msg", "field"}
 // For an odd number of multiple fields, the first field is considered a message value {"msg", "field"}
 // An even number of fields are added without any change in sequence
-func fixupFields(fields []string) (flds []string) {
+func fixupFields(fields []any) (flds []any) {
 	ln := len(fields)
 
-	if ln == 1 { // Single field becomes a "msg: field" pair
-		flds = append(flds, []string{"msg", fields[0]}...)
+	if ln == 1 { // A single field becomes a "msg: field" pair
+		flds = append(flds, []any{"msg", fields[0]}...)
 	} else {
 		if ln%2 != 0 { // for odd fields, treat the first as a message
 			msg := fields[0]
-			fields = fields[1:]                          // drop the first
-			flds = append(flds, []string{"msg", msg}...) // add as first pair
+			fields = fields[1:]                       // drop the first
+			flds = append(flds, []any{"msg", msg}...) // add as first pair
 		}
 		// Add fields
 		flds = append(flds, fields...)
@@ -200,8 +214,8 @@ func fixupFields(fields []string) (flds []string) {
 // SetUserMsg is a convenience method for setting a user message field
 // This could be displayed to the user of the app
 func (se *SErr) SetUserMsg(msg string, sev string) {
-	userInfo := []string{UserMsgKey, msg, UserMsgSeverityKey, sev}
-	se.fields = append(se.fields, userInfo...)
+	userInfo := []any{UserMsgKey, msg, UserMsgSeverityKey, sev}
+	se.AppendAttributes(userInfo...)
 }
 
 // UserMsg is a convenience method to return the user message field
