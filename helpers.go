@@ -40,6 +40,14 @@ func StringFromErr(err error) (strErr string) {
 	return
 }
 
+func AppendAttributesToErr(err error, attrs ...any) {
+	if err != nil {
+		if ser, ok := err.(SErr); ok {
+			ser.AppendAttributes(attrs...)
+		}
+	}
+}
+
 // UserMsgFromErr returns the user message in the SErr,
 // alt string if none, empty string if no error
 func UserMsgFromErr(err error, alt ...string) (msg string) {
