@@ -90,12 +90,12 @@ func (se SErr) FieldsAsString() string {
 	for key, val := range mp {
 		arr = append(arr, fmt.Sprintf("%s[%s]", key, val))
 	}
-	return strings.Join(arr, "; ")
+	return strings.Join(arr, ", ")
 }
 
 // String satisfies the Stringer interface, so this is the default method called by fmt
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s [error_attrs] %s", se.err, se.FieldsAsString())
+	return fmt.Sprintf("%s - error: %s;", se.err, se.FieldsAsString())
 }
 
 // Clone returns a new SErr from an existing one
