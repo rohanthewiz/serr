@@ -56,15 +56,15 @@ func TestStringFromErr(t *testing.T) {
 		{
 			name:    "SErr with message",
 			err:     NewSErr("serr message"),
-			want:    "serr message [error_attrs] => function->rohanthewiz/serr.TestStringFromErr; location->serr/helpers_test.go:58",
-			wantAlt: "serr message [error_attrs] => location->serr/helpers_test.go:58; function->rohanthewiz/serr.TestStringFromErr",
+			want:    "serr message - Error: location[serr/helpers_test.go:58], function[rohanthewiz/serr.TestStringFromErr]",
+			wantAlt: "serr message - Error: function[rohanthewiz/serr.TestStringFromErr], location[serr/helpers_test.go:58]",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := StringFromErr(tt.err); !(got == tt.want || (tt.wantAlt != "" && got == tt.wantAlt)) {
-				t.Errorf("StringFromErr() = %v, want %v or %v", got, tt.want, tt.wantAlt)
+				t.Errorf("got: %v, want: %v or %v", got, tt.want, tt.wantAlt)
 			}
 		})
 	}
