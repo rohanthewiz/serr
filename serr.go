@@ -175,6 +175,20 @@ func Wrap(err error, fields ...string) error {
 	return NewSerrNoContext(err).newSErr(fields...)
 }
 
+// WrapF conveniently wraps an existing error with a msg as a formatted string
+// Returns an SErr
+func WrapF(err error, format string, args ...any) error {
+	if err == nil {
+		fmt.Println("SErr: Not wrapping a nil error", "callerLocation:", FunctionLoc(FrameLevels.FrameLevel2),
+			"callerName:", FunctionName(FrameLevels.FrameLevel2))
+		return nil
+	}
+
+	fields := []string{"msg", fmt.Sprintf(format, args...)}
+
+	return NewSerrNoContext(err).newSErr(fields...)
+}
+
 // WrapAsSErr wraps an existing error. Attribute keys and values must be strings.
 // Returns a concrete SErr (structured err)
 // This requires an even number of fields unless a single field is given
