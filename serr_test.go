@@ -149,3 +149,39 @@ func TestF(t *testing.T) {
 		t.Errorf("String() should contain '%s', got '%s'", expectedErr, strErr)
 	}
 }
+
+func TestGetAttribute(t *testing.T) {
+	// Build a SErr without auto-added context so we can control attributes precisely
+	se := NewSerrNoContext(errors.New("base error"))
+	se.AppendAttributes("k1", 123, "k2", "v2")
+
+	// Existing key with non-string value
+	if val, ok := se.GetAttribute("k1"); !ok {
+		t.Fatalf("Expected to find attribute 'k1'")
+	} else {
+		iv, ok := val.(int)
+		if !ok || iv != 123 {
+			t.Fatalf("Expected 'k1' to be int 123, got %#v", val)
+		}
+	}
+
+	// Missing key should return (nil, false)
+	if val, ok := se.GetAttribute("missing"); ok || val != nil {
+		t.Fatalf("Expected missing attribute to return (nil,false), got (%#v,%v)", val, ok)
+	}
+
+	// Duplicate key should concatenate with newest value first as a string
+	se.AppendAttributes("k1", "next")
+	if val, ok := se.GetAttribute("k1"); !ok {
+		t.Fatalf("Expected to find attribute 'k1' after duplicate add")
+	} else {
+		str, ok := val.(string)
+		if !ok {
+			t.Fatalf("Expected 'k1' to be a string after duplicate add, got %#v", val)
+		}
+		expected := "next - 123"
+		if str != expected {
+			t.Fatalf("Expected concatenated value %q, got %q", expected, str)
+		}
+	}
+}

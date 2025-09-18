@@ -69,11 +69,12 @@ func (se SErr) Error() string {
 func (se SErr) FieldsMap() map[string]string {
 	flds := map[string]string{}
 	key := ""
+
 	for i, str := range se.fields {
 		if i%2 == 0 { // even indices are presumed to be keys
 			key = fmt.Sprintf("%v", str)
 		} else {
-			if orig, ok := flds[key]; ok { // we've seen this key before
+			if orig, ok := flds[key]; ok { // key is already in the map
 				flds[key] = fmt.Sprintf("%v", str) + " - " + orig
 			} else {
 				flds[key] = fmt.Sprintf("%v", str)
@@ -81,6 +82,36 @@ func (se SErr) FieldsMap() map[string]string {
 		}
 	}
 	return flds
+}
+
+// FieldsMapOfAny returns all SErr attributes as a map[string]any.
+// Values of duplicate fields are appended together with ' - '
+// such that the innermost attributes are to the right
+func (se SErr) FieldsMapOfAny() map[string]any {
+	flds := map[string]any{}
+	key := ""
+
+	for i, val := range se.fields {
+		if i%2 == 0 { // even indices are presumed to be keys
+			key = fmt.Sprintf("%v", val)
+		} else {
+			if origVal, ok := flds[key]; ok { // key is already in the map
+				flds[key] = fmt.Sprintf("%v - %v", val, origVal)
+			} else {
+				flds[key] = val
+			}
+		}
+	}
+	return flds
+}
+
+// GetAttribute returns the value of a given attribute key, if it exists
+// The concrete value will be a string if key has multiple values
+func (se SErr) GetAttribute(key string) (value any, present bool) {
+	if val, ok := se.FieldsMapOfAny()[key]; ok {
+		return val, true
+	}
+	return nil, false
 }
 
 // FieldsAsString builds output for non-structured logging
@@ -154,6 +185,17 @@ func (ser SErr) newSErr(pairs ...string) (out SErr) {
 // NewSerrNoContext builds an SErr from an err without addition of frame context.
 // If err already contains a concrete SErr, it is returned
 func NewSerrNoContext(err error) SErr {
+	if ser, ok := err.(SErr); !ok {
+		return SErr{err: err}
+	} else {
+		return ser
+	}
+}
+
+// SErrFromErr simply builds an SErr from an err without addition of any context.
+// If err already contains a concrete SErr, it is returned.
+// It does the same as NewSerrNoContext, but the naming here is more ergonomic.
+func SErrFromErr(err error) SErr {
 	if ser, ok := err.(SErr); !ok {
 		return SErr{err: err}
 	} else {
