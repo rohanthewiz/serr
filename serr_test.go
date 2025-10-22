@@ -7,13 +7,20 @@ import (
 	"testing"
 )
 
+func TestSErrFromatting(t *testing.T) {
+	ser := NewSErr("my error", "att1", "val1", "att2", "val2")
+	ser2 := WrapAsSErr(ser, "att2", "valNew")
+	const expected = "att2[val2->valNew]"
+
+	result := ser2.FieldsAsCustomString(", ", "->")
+	if !strings.Contains(result, expected) {
+		t.Errorf("Expected result to contain '%s', got '%s'", expected, result)
+	}
+}
+
 func TestSErr(t *testing.T) {
 	const strErr1 = "This is a test err"
 	const thisIsMyMessage = "This is my message"
-
-	// todo: constantize most test literals
-
-	fmt.Println("Testing SErr")
 
 	// We should safely ignore a nil err
 	ret := Wrap(nil, "We should be able to handle a nil error without crashing")
@@ -29,9 +36,7 @@ func TestSErr(t *testing.T) {
 	if _, ok := ser.(SErr); !ok {
 		t.Error("ser should be a SErr")
 		t.FailNow()
-	} /*else {
-		t.Log("at this point ser is:", s.String())
-	}*/
+	}
 
 	// Add some fields to an existing sErr
 	err := Wrap(ser, "thing2", "thing2NewVal")
@@ -39,6 +44,8 @@ func TestSErr(t *testing.T) {
 	if !ok {
 		t.Error("Wrap should return an error containing a concrete SErr type")
 	} else {
+		t.Log("se =>", se.String())
+
 		// Test SErr#GetError
 		strErr := se.GetError().Error()
 		if strErr != strErr1 {
