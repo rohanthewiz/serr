@@ -105,6 +105,27 @@ func (se SErr) FieldsMapOfAny() map[string]any {
 	return flds
 }
 
+// FieldsMapOfSliceOfAny returns all SErr attributes as a map[string][]any.
+// Values of duplicate fields are appended to the array
+// such that the innermost attributes are to the right
+func (se SErr) FieldsMapOfSliceOfAny() map[string][]any {
+	flds := make(map[string][]any)
+	key := ""
+
+	for i, val := range se.fields {
+		if i%2 == 0 { // even indices are presumed to be keys
+			key = fmt.Sprintf("%v", val)
+		} else {
+			if origArr, ok := flds[key]; ok { // key is already in the map
+				flds[key] = append(origArr, val)
+			} else {
+				flds[key] = []any{val}
+			}
+		}
+	}
+	return flds
+}
+
 // GetAttribute returns the value of a given attribute key, if it exists
 // The concrete value will be a string if key has multiple values
 func (se SErr) GetAttribute(key string) (value any, present bool) {
@@ -124,9 +145,31 @@ func (se SErr) FieldsAsString() string {
 	return strings.Join(arr, ", ")
 }
 
+// FieldsAsCustomString builds output with custom attribute and level separators
+// Example
+//
+//	ser := NewSErr("my error", "att1", "val1", "att2", "val2")
+//	ser2 := WrapAsSErr(ser, "att2", "valNew")
+//	fmt.Println(ser2.FieldsAsCustomString(", ", "->"))
+//
+// Output: att1[val1], att2[val2->valNew], location[serr/serr_test.go:11->serr/serr_test.go:12], ...
+func (se SErr) FieldsAsCustomString(attrSep, levelSep string) string {
+	mp := se.FieldsMapOfSliceOfAny()
+	arr := make([]string, 0, len(mp))
+
+	for key, anyArr := range mp {
+		var sa []string
+		for _, a := range anyArr {
+			sa = append(sa, fmt.Sprintf("%v", a))
+		}
+		arr = append(arr, fmt.Sprintf("%s[%s]", key, strings.Join(sa, levelSep)))
+	}
+	return strings.Join(arr, attrSep)
+}
+
 // String satisfies the Stringer interface, so this is the default method called by fmt
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s - Error: %s", se.err, se.FieldsAsString())
+	return fmt.Sprintf("%s - Error: %s", se.err, se.FieldsAsCustomString(", ", "->"))
 }
 
 // Clone returns a new SErr from an existing one
