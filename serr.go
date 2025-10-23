@@ -150,9 +150,9 @@ func (se SErr) FieldsAsString() string {
 //
 //	ser := NewSErr("my error", "att1", "val1", "att2", "val2")
 //	ser2 := WrapAsSErr(ser, "att2", "valNew")
-//	fmt.Println(ser2.FieldsAsCustomString(", ", "->"))
+//	fmt.Println(ser2.FieldsAsCustomString(", ", " -> "))
 //
-// Output: att1[val1], att2[val2->valNew], location[serr/serr_test.go:11->serr/serr_test.go:12], ...
+// Output: att1[val1], att2[val2 -> valNew], location[serr/serr_test.go:11 -> serr/serr_test.go:12], ...
 func (se SErr) FieldsAsCustomString(attrSep, levelSep string) string {
 	mp := se.FieldsMapOfSliceOfAny()
 	arr := make([]string, 0, len(mp))
@@ -169,7 +169,7 @@ func (se SErr) FieldsAsCustomString(attrSep, levelSep string) string {
 
 // String satisfies the Stringer interface, so this is the default method called by fmt
 func (se SErr) String() (out string) {
-	return fmt.Sprintf("%s - Error: %s", se.err, se.FieldsAsCustomString(", ", "->"))
+	return fmt.Sprintf("%s - Error: %s", se.err, se.FieldsAsCustomString(", ", " -> "))
 }
 
 // Clone returns a new SErr from an existing one
@@ -198,7 +198,7 @@ func (se SErr) Fields() (strFields []string) {
 	return
 }
 
-// AppendCallerContext adds Function name and location of the call to SErr.
+// AppendCallerContext adds Function name and location of the call to SErr.`
 // typically used in new or wrapper functions
 func (se *SErr) AppendCallerContext(frameLevel int) {
 	se.AppendKeyValPairs([]string{
