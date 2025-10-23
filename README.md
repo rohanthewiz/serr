@@ -27,7 +27,7 @@ func main() {
 
 	// We can printout errors and attributes in a nice format
 	fmt.Println(serr.StringFromErr(errWrapped))
-	// ==> some error has occurred => location->logtest/main.go:16; function->main.main; msg->Error occurred when trying to do things
+	// ==> some error has occurred => location[logtest/main.go:16] function[main.main] msg[Error occurred when trying to do things]
 
 	// A structured error aware logger like github.com/rohanthewiz/logger can output all attributes
 	logger.LogErr(errWrapped, "An Error occurred")

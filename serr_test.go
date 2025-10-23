@@ -10,9 +10,9 @@ import (
 func TestSErrFromatting(t *testing.T) {
 	ser := NewSErr("my error", "att1", "val1", "att2", "val2")
 	ser2 := WrapAsSErr(ser, "att2", "valNew")
-	const expected = "att2[val2->valNew]"
+	const expected = "att2[val2 -> valNew]"
 
-	result := ser2.FieldsAsCustomString(", ", "->")
+	result := ser2.FieldsAsCustomString(", ", " -> ")
 	if !strings.Contains(result, expected) {
 		t.Errorf("Expected result to contain '%s', got '%s'", expected, result)
 	}
