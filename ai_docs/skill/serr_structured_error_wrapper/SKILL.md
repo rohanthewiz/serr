@@ -1,8 +1,6 @@
 ---
-globs:
-  - "**/*.go"
-enabled: true
-description: "Guide for using the serr structured error package in Go applications"
+name: serr-structured-error-wrapper
+description: "Serr allows us to enrich our Go application errors with location, etc, and bubble them up to the caller where we only have to log once"
 ---
 
 # SErr - Structured Error Package for Go
