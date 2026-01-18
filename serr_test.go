@@ -169,6 +169,55 @@ func TestF(t *testing.T) {
 	}
 }
 
+func TestNewF(t *testing.T) {
+	filename := "config.yaml"
+	const expectedErr = "failed to read file: config.yaml"
+
+	err := NewF("failed to read file: %s", filename)
+
+	// Test that it returns a proper error
+	if err == nil {
+		t.Error("NewF() returned nil instead of an error")
+	}
+
+	// Test that the error message is correctly formatted
+	if err.Error() != expectedErr {
+		t.Errorf("Expected error message '%s', got '%s'", expectedErr, err.Error())
+	}
+
+	// Test that it returns a SErr type
+	se, ok := err.(SErr)
+	if !ok {
+		t.Error("NewF() should return a SErr type")
+		return
+	}
+
+	// Test that location and function fields were added
+	fields := se.FieldsMap()
+	if _, ok := fields["location"]; !ok {
+		t.Error("Expected 'location' field to be present")
+	}
+
+	if _, ok := fields["function"]; !ok {
+		t.Error("Expected 'function' field to be present")
+	}
+
+	// Test the string representation
+	strErr := se.String()
+	if !strings.Contains(strErr, expectedErr) {
+		t.Errorf("String() should contain '%s', got '%s'", expectedErr, strErr)
+	}
+
+	// Test with multiple format arguments
+	port := 8080
+	host := "localhost"
+	err2 := NewF("failed to connect to %s:%d", host, port)
+	expectedErr2 := "failed to connect to localhost:8080"
+	if err2.Error() != expectedErr2 {
+		t.Errorf("Expected error message '%s', got '%s'", expectedErr2, err2.Error())
+	}
+}
+
 func TestGetAttribute(t *testing.T) {
 	// Build a SErr without auto-added context so we can control attributes precisely
 	se := NewSerrNoContext(errors.New("base error"))
