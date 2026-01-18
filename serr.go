@@ -22,6 +22,13 @@ func New(erStr string, fields ...string) error {
 	return se.newSErr(fields...)
 }
 
+// NewF returns a new SErr from a formatted string as an error type
+// Example: serr.NewF("failed to read file: %s", filename)
+func NewF(format string, args ...any) error {
+	se := SErr{err: fmt.Errorf(format, args...)}
+	return se.newSErr()
+}
+
 // NewSErr returns a new concrete SErr
 func NewSErr(er string, fields ...string) SErr {
 	ser := SErr{err: errors.New(er)}
