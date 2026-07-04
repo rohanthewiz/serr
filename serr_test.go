@@ -293,6 +293,37 @@ func TestFieldsAsString(t *testing.T) {
 	}
 }
 
+func TestUserFields(t *testing.T) {
+	// Caller-supplied attributes come back in order; the frame context
+	// added by New is filtered out.
+	se := SErrFromErr(New("wrong number of parameters", "want", "1", "got", "0"))
+	got := se.UserFields()
+	want := []string{"want", "1", "got", "0"}
+	if len(got) != len(want) {
+		t.Fatalf("Expected %v, got %v", want, got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("Expected %v, got %v", want, got)
+		}
+	}
+
+	// Wrap messages, another frame of context, and user-message fields
+	// are all reserved; attributes added across wraps still come through.
+	wrapped := WrapAsSErr(se, "a wrap message", "pos", "27")
+	wrapped.SetUserMsg("Something went wrong", Severity.Error)
+	got = wrapped.UserFields()
+	want = []string{"want", "1", "got", "0", "pos", "27"}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("Expected %v, got %v", want, got)
+	}
+
+	// A plain error carries no fields.
+	if flds := SErrFromErr(errors.New("plain")).UserFields(); len(flds) != 0 {
+		t.Errorf("Expected no user fields for a plain error, got %v", flds)
+	}
+}
+
 func TestSErrFromErr(t *testing.T) {
 	// Plain error should be wrapped
 	plainErr := errors.New("plain")

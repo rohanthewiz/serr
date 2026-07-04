@@ -86,6 +86,18 @@ se := serr.WrapAsSErr(err, "context", "additional info")
 fields := se.Fields() // Returns []string{key, val, key, val, ...}
 ```
 
+### UserFields - Get caller-supplied fields only, in order
+
+Fields minus the reserved keys serr itself writes (`location`/`function`
+frame context, `msg` wrap messages, and the user-message fields). Use it
+to format an error for user-facing output, where frame context would be
+noise:
+
+```go
+err := serr.New("wrong number of parameters", "want", "1", "got", "0")
+flds := serr.SErrFromErr(err).UserFields() // []string{"want", "1", "got", "0"}
+```
+
 ### FieldsMap - Get attributes as map
 
 ```go

@@ -6,6 +6,15 @@ import (
 	"strings"
 )
 
+// Reserved attribute keys that serr itself writes: frame context
+// added on each New/Wrap, and wrap messages. See also UserMsgKey and
+// UserMsgSeverityKey in user_message.go.
+const (
+	LocationKey = "location"
+	FunctionKey = "function"
+	MsgKey      = "msg"
+)
+
 // SErr is a Structured Error wrapper
 // Supports wrapping of errors with a list of key, values to nicely support structured logging
 // Works nicely with github.com/rohanthewiz/logger
@@ -207,12 +216,33 @@ func (se SErr) Fields() (strFields []string) {
 	return
 }
 
+// UserFields returns the caller-supplied attributes as ordered
+// key, value pairs: Fields minus the reserved keys serr itself
+// writes ("location"/"function" frame context, "msg" wrap messages,
+// and the user-message fields, which have their own accessor).
+// Use it to format an error for user-facing output, where frame
+// context would be noise:
+//
+//	err := serr.New("wrong number of parameters", "want", "1", "got", "0")
+//	serr.SErrFromErr(err).UserFields() // ["want", "1", "got", "0"]
+func (se SErr) UserFields() (strFields []string) {
+	for i := 0; i+1 < len(se.fields); i += 2 {
+		key := fmt.Sprintf("%v", se.fields[i])
+		switch key {
+		case LocationKey, FunctionKey, MsgKey, UserMsgKey, UserMsgSeverityKey:
+			continue
+		}
+		strFields = append(strFields, key, fmt.Sprintf("%v", se.fields[i+1]))
+	}
+	return
+}
+
 // AppendCallerContext adds Function name and location of the call to SErr.`
 // typically used in new or wrapper functions
 func (se *SErr) AppendCallerContext(frameLevel int) {
 	se.AppendKeyValPairs([]string{
-		"location", FunctionLoc(frameLevel),
-		"function", FunctionName(frameLevel),
+		LocationKey, FunctionLoc(frameLevel),
+		FunctionKey, FunctionName(frameLevel),
 	}...)
 }
 
@@ -276,7 +306,7 @@ func WrapF(err error, format string, args ...any) error {
 		return nil
 	}
 
-	fields := []string{"msg", fmt.Sprintf(format, args...)}
+	fields := []string{MsgKey, fmt.Sprintf(format, args...)}
 
 	return NewSerrNoContext(err).newSErr(fields...)
 }
@@ -304,12 +334,12 @@ func fixupFields(fields []any) (flds []any) {
 	ln := len(fields)
 
 	if ln == 1 { // A single field becomes a "msg: field" pair
-		flds = append(flds, []any{"msg", fields[0]}...)
+		flds = append(flds, []any{MsgKey, fields[0]}...)
 	} else {
 		if ln%2 != 0 { // for odd fields, treat the first as a message
 			msg := fields[0]
-			fields = fields[1:]                       // drop the first
-			flds = append(flds, []any{"msg", msg}...) // add as first pair
+			fields = fields[1:]                        // drop the first
+			flds = append(flds, []any{MsgKey, msg}...) // add as first pair
 		}
 		// Add fields
 		flds = append(flds, fields...)
